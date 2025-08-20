@@ -4,6 +4,11 @@
 
 This open-source tool automatically extracts details from **Google PDF invoices** and exports them to **CSV** for easy bookkeeping and accounting.
 
+The repository demonstrates two complementary approaches:
+
+- `ai_invoice_extract.py` – parses invoices with OpenAI’s `gpt-4o-mini` using a strict JSON schema.
+- `parse_invoices.py` – a ~10× faster option powered purely by regular expressions. It avoids generic AI and extra dependencies, showing that similar tasks can often be solved with straightforward rules.
+
 ## ✨ Features
 - 🔍 Extracts key fields:
   - Invoice number  
@@ -13,9 +18,15 @@ This open-source tool automatically extracts details from **Google PDF invoices*
   - Subtotal, VAT, Total (EUR)  
   - Supplier & VAT number  
 - 📂 Batch processing of multiple PDFs at once (`invoices/*.pdf`)  
-- 🧹 Smart text normalization (fixes dotted/fragmented text in PDFs)  
-- 🤖 AI parsing with **OpenAI gpt-4o-mini** (cheap & accurate) using **strict JSON schema**  
-- 📊 Clean CSV export ready for bookkeeping software  
+- 🧹 Smart text normalization (fixes dotted/fragmented text in PDFs)
+- 🤖 AI parsing with **OpenAI gpt-4o-mini** (cheap & accurate) using **strict JSON schema**
+- 📊 Clean CSV export ready for bookkeeping software
+
+## ⚡ Regex-based Alternative
+
+For predictable invoice layouts, `parse_invoices.py` processes files roughly **10× faster**. It relies solely on `pdfplumber` and regular expressions—no generic AI models or heavy dependencies. This highlights that many extraction tasks can be handled with classic techniques.
+
+You can also explore ML-driven options such as [spaCy's Matcher](https://www.webdeveloper.today/2023/05/list-of-car-makes-brands-and-you-want.html) for rule-based pattern matching on raw text.
 
 ## 🚀 Quick Start
 
