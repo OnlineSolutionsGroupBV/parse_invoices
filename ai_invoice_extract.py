@@ -48,11 +48,14 @@ def normalize(txt: str) -> str:
 #  OpenAI client + schema
 # =========================
 load_dotenv()
-API_KEY = os.getenv("OPENAI_API_KEY")
+# Prefer the dedicated parser key but allow the old name as a fallback
+API_KEY = os.getenv("OPENAI_API_KEY_PARSER") or os.getenv("OPENAI_API_KEY")
 MODEL   = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
 
 if not API_KEY:
-    raise RuntimeError("OPENAI_API_KEY ontbreekt. Zet hem in .env of in je omgeving.")
+    raise RuntimeError(
+        "OPENAI_API_KEY_PARSER ontbreekt. Zet OPENAI_API_KEY_PARSER (of OPENAI_API_KEY) in .env of in je omgeving."
+    )
 
 client = OpenAI(api_key=API_KEY)
 

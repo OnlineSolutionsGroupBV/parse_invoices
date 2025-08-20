@@ -27,10 +27,12 @@ python3 -m venv venv
 source venv/bin/activate   # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 
-cp .env.example .env       # add your OpenAI API key
+cp .env.example .env       # add your OpenAI API key as OPENAI_API_KEY_PARSER
 python ai_invoice_extract.py -i "invoices/*.pdf" -o output/invoices.csv
 
 ```
+
+Ensure your OpenAI API key is available via the `OPENAI_API_KEY_PARSER` environment variable (the script also falls back to `OPENAI_API_KEY`).
 
 
 ##  Related Blog Post
