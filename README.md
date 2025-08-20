@@ -30,6 +30,8 @@ pip install -r requirements.txt
 cp .env.example .env       # add your OpenAI API key
 python ai_invoice_extract.py -i "invoices/*.pdf" -o output/invoices.csv
 
+```
+
 
 ##  Related Blog Post
 
