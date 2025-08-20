@@ -81,7 +81,21 @@ INVOICE_SCHEMA = {
             "currency":           {"type": "string", "enum": ["EUR"], "default": "EUR"},
             "source_file":        {"type": "string"}
         },
-        "required": ["invoice_number", "total_eur", "source_file"],
+        "required": [
+            "supplier",
+            "supplier_vat",
+            "invoice_number",
+            "invoice_date_start",
+            "invoice_date_end",
+            "billing_id",
+            "domain",
+            "subtotal_eur",
+            "vat_percent",
+            "vat_amount_eur",
+            "total_eur",
+            "currency",
+            "source_file",
+        ],
         "additionalProperties": False
     },
     "strict": True
