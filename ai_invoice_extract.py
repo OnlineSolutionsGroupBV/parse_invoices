@@ -31,8 +31,22 @@ def normalize(txt: str) -> str:
     # 1) leader dots -> spatie
     txt = DOT_RUN.sub(" ", txt)
 
-    # 2) verwijder puntje tussen twee word-chars (a.b -> ab, 2.0 -> 20)
+    # 2) behoud decimalen (6.90) door tijdelijke placeholders
+    decimals: dict[str, str] = {}
+
+    def _keep_decimal(m: re.Match) -> str:
+        key = f"__DEC{len(decimals)}__"
+        decimals[key] = m.group(0)
+        return key
+
+    txt = re.sub(r"(?<!\.)\d+\.\d+(?!\.)", _keep_decimal, txt)
+
+    # verwijder puntje tussen twee word-chars (a.b -> ab, 5.0.1 -> 501)
     txt = re.sub(r"(?<=\w)\.(?=\w)", "", txt)
+
+    # zet decimalen terug
+    for k, v in decimals.items():
+        txt = txt.replace(k, v)
 
     # 3) plak 'I n v o i c e' -> 'Invoice'
     txt = re.sub(r"(?:[A-Za-z]\s+){2,}[A-Za-z]", lambda m: m.group(0).replace(" ", ""), txt)
