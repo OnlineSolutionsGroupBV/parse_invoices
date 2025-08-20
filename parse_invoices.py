@@ -6,43 +6,9 @@ import csv
 import glob
 import re
 import sys
-import unicodedata
 from pathlib import Path
 
 import pdfplumber
-
-# --- Normalisatie helpers ----------------------------------------------------
-
-DOT_RUN   = re.compile(r"[.\u2022\u00B7\u2219]{2,}")   # meerdere dots/bullets
-WS_RUN    = re.compile(r"\s+")
-ZWS       = "\u200b"
-
-def normalize(txt: str) -> str:
-    if not txt:
-        return ""
-    txt = unicodedata.normalize("NFKC", txt)
-    txt = txt.replace(ZWS, "").replace("\u00A0", " ")
-
-    # 1) vervang lange leader-dot runs door spatie
-    txt = DOT_RUN.sub(" ", txt)
-
-    # 2) verwijder puntjes tussen letters/cijfers
-    txt = re.sub(r"(?<=\w)\.(?=\w)", "", txt)
-
-    # 3) plak losse letters samen: "I n v o i c e" → "Invoice"
-    txt = re.sub(r"(?:[A-Za-z]\s+){2,}[A-Za-z]", lambda m: m.group(0).replace(" ", ""), txt)
-
-    # 4) plak losse cijfers samen, behalve bij decimalen (xx.xx) of minteken
-    #    - match >=2 digits gescheiden door spaties
-    #    - maar negeer als er een punt of streepje in de buurt is
-    def join_digits(m):
-        return m.group(0).replace(" ", "")
-
-    txt = re.sub(r"(?<![\d\.\-])(?:\d\s+){1,}\d(?![\.\-])", join_digits, txt)
-
-    # 5) normaliseer whitespace
-    txt = WS_RUN.sub(" ", txt).strip()
-    return txt
 
 
 # --- Parsers -----------------------------------------------------------------
@@ -56,9 +22,14 @@ PATTERNS = {
     "invoice_date": re.compile(
         r"Summary\s+for\s+([0-9]{1,2}\s+[A-Za-z]{3}\s+\d{4})\s*-\s*([0-9]{1,2}\s+[A-Za-z]{3}\s+\d{4})", re.I),
 
-    # Domeinnaam – bv. "dergatsjev.be"
+    # Domeinnaam – tekst kan vol staan met puntjes/spaties tussen letters
+    # Voorbeeld: "D.o..m..a..i.n. .n.a..m..e........d..e.r.g..a.t.s..je..v...b.e..."
+    # We match de label losjes en herstellen vervolgens de domeinnaam.
     "domain": re.compile(
-        r"Domain\s*name[:\s]*([A-Za-z0-9.-]+\.[A-Za-z]{2,})", re.I),
+        r"D[.\s]*o[.\s]*m[.\s]*a[.\s]*i[.\s]*n[.\s]*"
+        r"n[.\s]*a[.\s]*m[.\s]*e[.:\s]*([A-Za-z0-9.\s]+)",
+        re.I,
+    ),
 
     # Subtotaal (optioneel extra veld)
     "subtotal": re.compile(
@@ -90,11 +61,10 @@ PATTERNS = {
 def extract_invoice(pdf_path: str) -> dict:
     with pdfplumber.open(pdf_path) as pdf:
         raw = "\n".join((p.extract_text() or "") for p in pdf.pages)
-    text = normalize(raw)
-    #text = raw
+    text = raw
 
     data = {
-        #"file": str(pdf_path),
+        "file": str(pdf_path),
         "invoice_number": None,
         "invoice_date": None,
         "domain": None,
@@ -113,7 +83,11 @@ def extract_invoice(pdf_path: str) -> dict:
         data["invoice_date"] = None
 
     m = PATTERNS["domain"].search(text)
-    data["domain"] = m.group(1) if m else None
+    if m:
+        candidate = re.sub(r"[\s.]", "", m.group(1))
+        m_dom = re.match(r"([A-Za-z0-9-]+)([A-Za-z]{2,})$", candidate)
+        if m_dom:
+            data["domain"] = f"{m_dom.group(1)}.{m_dom.group(2)}"
 
     totals = PATTERNS["total_eur"].findall(text)
     if totals:
