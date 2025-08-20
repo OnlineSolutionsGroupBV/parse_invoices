@@ -56,10 +56,6 @@ PATTERNS = {
     "invoice_date": re.compile(
         r"Summary\s+for\s+([0-9]{1,2}\s+[A-Za-z]{3}\s+\d{4})\s*-\s*([0-9]{1,2}\s+[A-Za-z]{3}\s+\d{4})", re.I),
 
-    # Billing ID – bv. "5818-9541-5911"
-    "billing_id": re.compile(
-        r"Billing\s*ID[:\s]*([\d-]{6,})", re.I),
-
     # Domeinnaam – bv. "dergatsjev.be"
     "domain": re.compile(
         r"Domain\s*name[:\s]*([A-Za-z0-9.-]+\.[A-Za-z]{2,})", re.I),
@@ -87,10 +83,6 @@ PATTERNS = {
     # Klantnaam (Bill to)
     "customer_name": re.compile(
         r"Bill\s+to\s+([A-Za-z\s]+)", re.I),
-
-    # Klantdomein direct onder "Bill to"
-    "customer_domain": re.compile(
-        r"Bill\s+to.*?\n([A-Za-z0-9.-]+\.[A-Za-z]{2,})", re.I|re.S),
 }
 
 
@@ -98,7 +90,6 @@ PATTERNS = {
 def extract_invoice(pdf_path: str) -> dict:
     with pdfplumber.open(pdf_path) as pdf:
         raw = "\n".join((p.extract_text() or "") for p in pdf.pages)
-    #import pdb;pdb.set_trace()
     text = normalize(raw)
     #text = raw
 
@@ -106,31 +97,25 @@ def extract_invoice(pdf_path: str) -> dict:
         #"file": str(pdf_path),
         "invoice_number": None,
         "invoice_date": None,
-        "billing_id": None,
         "domain": None,
         "total_eur": None,
         "supplier": None,
         "error": None,
     }
-
-    import pdb;pdb.set_trace()
     
     m = PATTERNS["invoice_number"].search(text)
     data["invoice_number"] = m.group(1) if m else None
 
     m = PATTERNS["invoice_date"].search(text)
     if m:
-        data["invoice_date"] = m.group(1) + " - " + m.group(2) # 
+        data["invoice_date"] = m.group(1) + " - " + m.group(2)
     else:
         data["invoice_date"] = None
-
-    m = PATTERNS["billing_id"].search(text)
-    data["billing_id"] = m.group(1) if m else None
 
     m = PATTERNS["domain"].search(text)
     data["domain"] = m.group(1) if m else None
 
-    totals = PATTERNS["totals"].findall(text)
+    totals = PATTERNS["total_eur"].findall(text)
     if totals:
         data["total_eur"] = float(totals[-1].replace(",", "."))
 
@@ -148,7 +133,7 @@ def discover_pdfs(input_path: Path, recursive: bool) -> list[Path]:
 
 def main():
     ap = argparse.ArgumentParser(
-        description="Parseer factuurvelden uit PDF's (Invoice number, date, Billing ID, Domain, Total in EUR) en exporteer naar CSV."
+        description="Parseer factuurvelden uit PDF's (Invoice number, date, Domain, Total in EUR) en exporteer naar CSV."
     )
     ap.add_argument(
         "-i", "--input", required=True,
@@ -180,7 +165,6 @@ def main():
         #        "file": str(pdf),
         #        "invoice_number": None,
         #        "invoice_date": None,
-        #        "billing_id": None,
         #        "domain": None,
         #        "total_eur": None,
         #        "supplier": None,
@@ -188,7 +172,7 @@ def main():
         #    })
 
     # Schrijf CSV
-    fieldnames = ["file", "invoice_number", "invoice_date", "billing_id", "domain", "total_eur", "supplier", "error"]
+    fieldnames = ["file", "invoice_number", "invoice_date", "domain", "total_eur", "supplier", "error"]
     Path(args.out).parent.mkdir(parents=True, exist_ok=True)
     with open(args.out, "w", newline="", encoding="utf-8") as f:
         w = csv.DictWriter(f, fieldnames=fieldnames)
