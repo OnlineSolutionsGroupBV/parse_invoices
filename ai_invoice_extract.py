@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import os, json, csv, glob, re, unicodedata, argparse
+import os, json, csv, glob, re, unicodedata, argparse, sys
 from pathlib import Path
 
 import pdfplumber
@@ -142,19 +142,24 @@ def extract_from_pdf(pdf_path: str) -> dict:
 # =========================
 #  CLI
 # =========================
-def main(in_glob: str, out_csv: str):
-    # meerdere patronen toestaan: "invoices/*.pdf invoices2/*.pdf"
-    files = []
-    for pattern in in_glob.split():
-        files.extend(glob.glob(pattern))
-    if not files:
-        print(f"Geen bestanden gevonden voor patroon: {in_glob}")
-        return
+def discover_pdfs(input_path: Path, recursive: bool) -> list[Path]:
+    if input_path.is_file() and input_path.suffix.lower() == ".pdf":
+        return [input_path]
+    pattern = "**/*.pdf" if recursive else "*.pdf"
+    return [Path(p) for p in glob.glob(str(input_path / pattern), recursive=recursive)]
+
+def main(input_path: str, out_csv: str, recursive: bool):
+    input_path = Path(input_path).expanduser().resolve()
+    pdfs = discover_pdfs(input_path, recursive)
+
+    if not pdfs:
+        print(f"Geen PDF's gevonden in: {input_path}")
+        sys.exit(2)
 
     rows, ok = [], 0
-    for f in files:
+    for f in pdfs:
         try:
-            data = extract_from_pdf(f)
+            data = extract_from_pdf(str(f))
             ok += 1
         except Exception as e:
             data = {
@@ -162,7 +167,7 @@ def main(in_glob: str, out_csv: str):
                 "invoice_date_start": None, "invoice_date_end": None,
                 "billing_id": None, "domain": None, "subtotal_eur": None,
                 "vat_percent": None, "vat_amount_eur": None, "total_eur": None,
-                "currency": "EUR", "source_file": f, "error": str(e)
+                "currency": "EUR", "source_file": str(f), "error": str(e)
             }
         rows.append(data)
 
@@ -184,8 +189,9 @@ def main(in_glob: str, out_csv: str):
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser(description="Parse Google invoices via OpenAI (cheap model + strict JSON).")
-    ap.add_argument("-i", "--input", required=True, help="Glob pattern(s), bv. 'invoices/*.pdf' of 'in1/*.pdf in2/*.pdf'")
+    ap.add_argument("-i", "--input", required=True, help="Pad naar PDF-bestand of map met PDF's")
     ap.add_argument("-o", "--out", default="invoices_ai.csv", help="Output CSV pad")
+    ap.add_argument("-r", "--recursive", action="store_true", help="Recursief submappen doorzoeken")
     args = ap.parse_args()
-    main(args.input, args.out)
+    main(args.input, args.out, args.recursive)
 
