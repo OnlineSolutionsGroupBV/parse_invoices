@@ -22,12 +22,9 @@ PATTERNS = {
     "invoice_date": re.compile(
         r"Summary\s+for\s+([0-9]{1,2}\s+[A-Za-z]{3}\s+\d{4})\s*-\s*([0-9]{1,2}\s+[A-Za-z]{3}\s+\d{4})", re.I),
 
-    # Domeinnaam – tekst kan vol staan met puntjes/spaties tussen letters
-    # Voorbeeld: "D.o..m..a..i.n. .n.a..m..e........d..e.r.g..a.t.s..je..v...b.e..."
-    # We match de label losjes en herstellen vervolgens de domeinnaam.
+    # Domeinnaam – regel direct na klantnaam in het "Bill to" blok
     "domain": re.compile(
-        r"D[.\s]*o[.\s]*m[.\s]*a[.\s]*i[.\s]*n[.\s]*"
-        r"n[.\s]*a[.\s]*m[.\s]*e[.:\s]*([A-Za-z0-9.\s]+)",
+        r"Bill\s+to\s*\n[^\n]+\n([A-Za-z0-9.-]+\.[A-Za-z]{2,})",
         re.I,
     ),
 
@@ -84,10 +81,7 @@ def extract_invoice(pdf_path: str) -> dict:
 
     m = PATTERNS["domain"].search(text)
     if m:
-        candidate = re.sub(r"[\s.]", "", m.group(1))
-        m_dom = re.match(r"([A-Za-z0-9-]+)([A-Za-z]{2,})$", candidate)
-        if m_dom:
-            data["domain"] = f"{m_dom.group(1)}.{m_dom.group(2)}"
+        data["domain"] = m.group(1).strip().lower()
 
     totals = PATTERNS["total_eur"].findall(text)
     if totals:
