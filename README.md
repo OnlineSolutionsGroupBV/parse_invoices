@@ -20,8 +20,8 @@ This open-source tool automatically extracts details from **Google PDF invoices*
 ## 🚀 Quick Start
 
 ```bash
-git clone https://github.com/<youruser>/ai-invoice-extractor.git
-cd ai-invoice-extractor
+git clone https://github.com/OnlineSolutionsGroupBV/parse_invoices.git
+cd parse_invoices
 
 python3 -m venv venv
 source venv/bin/activate   # Windows: venv\Scripts\activate
