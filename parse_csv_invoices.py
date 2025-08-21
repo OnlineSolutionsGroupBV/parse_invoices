@@ -13,6 +13,30 @@ import sys
 from pathlib import Path
 
 
+def _normalize_amount(value: str | None) -> float | None:
+    """Convert a localized amount string to a float.
+
+    Handles European formats where commas are used as decimal separators
+    and periods as thousands separators. Returns ``None`` if conversion
+    fails or the value is empty.
+    """
+    if not value:
+        return None
+    amt = value.strip().replace("€", "").replace(" ", "").replace("\xa0", "")
+    if not amt:
+        return None
+    if "," in amt and "." in amt:
+        amt = amt.replace(".", "").replace(",", ".")
+    elif "," in amt:
+        amt = amt.replace(",", ".")
+    else:
+        amt = amt.replace(",", "")
+    try:
+        return float(amt)
+    except ValueError:
+        return None
+
+
 # Supported meta field names in multiple languages
 KEY_MAP = {
     "invoice number": "invoice_number",
@@ -55,7 +79,7 @@ def extract_invoice(csv_path: str) -> dict:
                     value = row[1].strip() if len(row) > 1 else ""
                     field = KEY_MAP.get(key)
                     if field:
-                        data[field] = value
+                        data[field] = _normalize_amount(value) if field == "invoice_amount" else value
                 else:
                     if header is None:
                         header = row  # skip header row
