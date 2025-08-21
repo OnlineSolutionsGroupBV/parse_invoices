@@ -13,6 +13,19 @@ import sys
 from pathlib import Path
 
 
+# Supported meta field names in multiple languages
+KEY_MAP = {
+    "invoice number": "invoice_number",
+    "factuurnummer": "invoice_number",
+    "invoice date": "invoice_date",
+    "factuurdatum": "invoice_date",
+    "billing id": "billing_id",
+    "facturerings id": "billing_id",
+    "invoice amount": "invoice_amount",
+    "factuurbedrag": "invoice_amount",
+}
+
+
 def extract_invoice(csv_path: str) -> dict:
     """Extract invoice data from a CSV file."""
     data = {
@@ -38,16 +51,11 @@ def extract_invoice(csv_path: str) -> dict:
                     continue
 
                 if section == "meta":
-                    key = row[0].strip().lower()
+                    key = row[0].strip().lower().replace(":", "").replace("-", " ")
                     value = row[1].strip() if len(row) > 1 else ""
-                    if key == "invoice number":
-                        data["invoice_number"] = value
-                    elif key == "invoice date":
-                        data["invoice_date"] = value
-                    elif key == "billing id":
-                        data["billing_id"] = value
-                    elif key == "invoice amount":
-                        data["invoice_amount"] = value
+                    field = KEY_MAP.get(key)
+                    if field:
+                        data[field] = value
                 else:
                     if header is None:
                         header = row  # skip header row
