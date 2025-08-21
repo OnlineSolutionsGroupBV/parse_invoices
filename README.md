@@ -4,10 +4,11 @@
 
 This open-source tool automatically extracts details from **Google PDF invoices** and exports them to **CSV** for easy bookkeeping and accounting.
 
-The repository demonstrates two complementary approaches:
+The repository demonstrates several complementary approaches:
 
 - `ai_invoice_extract.py` – parses invoices with OpenAI’s `gpt-4o-mini` using a strict JSON schema.
 - `parse_invoices.py` – a ~10× faster option powered purely by regular expressions. It avoids generic AI and extra dependencies, showing that similar tasks can often be solved with straightforward rules.
+- `parse_csv_invoices.py` – reads Google invoice exports in CSV format and extracts the same key fields without any PDF processing.
 
 ## ✨ Features
 - 🔍 Extracts key fields:
@@ -40,6 +41,7 @@ pip install -r requirements.txt
 
 cp .env.example .env       # add your OpenAI API key as OPENAI_API_KEY_PARSER
 python ai_invoice_extract.py -i "invoices/*.pdf" -o output/invoices.csv
+python parse_csv_invoices.py -i "invoices/*.csv" -o output/csv_invoices.csv
 
 ```
 
